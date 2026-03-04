@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import urllib.parse
 
-# 1. إعداد الصفحة
+# 1. إعداد الصفحة الأساسي (يجب أن يكون أول سطر)
 st.set_page_config(page_title="Mohammad & Sarah Wedding", page_icon="✨", layout="wide")
 
 # =========================================================
@@ -17,7 +17,7 @@ if "vip" in query_params:
     guest_name = query_params.get("name", "ضيفنا الكريم")
     guests_count = query_params.get("count", "بدون مرافقين")
     
-    # إخفاء واجهة ستريملت وتغيير الخلفية لشيء مذهل وخاص بالتذكرة
+    # إخفاء واجهة ستريملت وتغيير الخلفية مع دعم الشاشات الصغيرة
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;700;900&display=swap');
@@ -39,11 +39,11 @@ if "vip" in query_params:
             -webkit-backdrop-filter: blur(15px);
             border: 1px solid rgba(212, 175, 55, 0.4);
             border-radius: 20px;
-            padding: 40px;
+            padding: clamp(20px, 5vw, 40px);
             text-align: center;
             box-shadow: 0 20px 50px rgba(212, 175, 55, 0.2);
             max-width: 500px;
-            width: 100%;
+            width: 90%; /* تجاوب مع الهاتف */
             animation: slide-up 1s ease-out forwards;
         }
         @keyframes slide-up {
@@ -57,24 +57,27 @@ if "vip" in query_params:
             border-radius: 30px;
             font-weight: bold;
             font-family: 'Cairo', sans-serif;
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 3vw, 1.2rem);
             display: inline-block;
             margin-bottom: 20px;
+        }
+        .ticket-title {
+            color: #D4AF37; font-family: 'Amiri', serif; 
+            font-size: clamp(2rem, 8vw, 3rem); /* تصغير الخط على الهاتف */
+            margin-bottom: 10px;
         }
         </style>
     """, unsafe_allow_html=True)
     
-    # إطلاق تأثيرات احتفالية (بالونات) عند فتح التذكرة
     st.balloons()
     
-    # تصميم بطاقة الـ VIP
     st.markdown(f"""
         <div class="ticket-card">
             <div class="vip-badge">VIP PASS 🌟</div>
-            <h1 style="color: #D4AF37; font-family: 'Amiri', serif; font-size: 3rem; margin-bottom: 10px;">أهلاً بك يا {guest_name}</h1>
-            <p style="color: #E2E8F0; font-family: 'Cairo', sans-serif; font-size: 1.2rem;">تذكرتك الملكية مفعلة وجاهزة.</p>
+            <h1 class="ticket-title">أهلاً بك يا {guest_name}</h1>
+            <p style="color: #E2E8F0; font-family: 'Cairo', sans-serif; font-size: clamp(1rem, 3vw, 1.2rem);">تذكرتك الملكية مفعلة وجاهزة.</p>
             <hr style="border-color: rgba(212,175,55,0.3); margin: 20px 0;">
-            <p style="color: #cbd5e1; font-family: 'Cairo', sans-serif; font-size: 1.1rem; text-align: right; direction: rtl;">
+            <p style="color: #cbd5e1; font-family: 'Cairo', sans-serif; font-size: clamp(0.9rem, 3vw, 1.1rem); text-align: right; direction: rtl;">
                 <b>الحدث:</b> حفل زفاف محمد وسارة 💍<br>
                 <b>عدد المرافقين المسجلين:</b> {guests_count}<br>
                 <b>الحالة:</b> <span style="color: #4ade80;">تم تأكيد الحضور والتسجيل بنجاح ✔️</span>
@@ -82,7 +85,6 @@ if "vip" in query_params:
         </div>
     """, unsafe_allow_html=True)
     
-    # زر للعودة للموقع الرئيسي
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("العودة إلى تفاصيل الحفل ↩️"):
         st.query_params.clear()
@@ -90,16 +92,15 @@ if "vip" in query_params:
 
 else:
     # =========================================================
-    # الصفحة الرئيسية (الموقع الأساسي كما صممته أنت تماماً)
+    # الصفحة الرئيسية
     # =========================================================
 
     # ---------------------------------------------------------
-    # 2. الدخول السينمائي (Cinematic Intro)
+    # 2. الدخول السينمائي (مع نصوص متجاوبة)
     # ---------------------------------------------------------
     cinematic_intro_html = """
     <script>
         const parentDoc = window.parent.document;
-        // التحقق من أن الافتتاحية لم تظهر من قبل في هذه الجلسة
         if (!parentDoc.getElementById('cinematic-intro')) {
             const introDiv = parentDoc.createElement('div');
             introDiv.id = 'cinematic-intro';
@@ -109,10 +110,10 @@ else:
                 <video id="intro-vid" autoplay muted playsinline style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; opacity: 0.8;">
                     <source src="https://videos.pexels.com/video-files/3195394/3195394-uhd_2560_1440_25fps.mp4" type="video/mp4">
                 </video>
-                <div style="position:absolute; z-index:10; text-align:center;">
-                    <h1 style="color:#D4AF37; font-family: 'Amiri', serif; font-size:4rem; text-shadow: 2px 2px 10px #000;">محمد & سارة</h1>
+                <div style="position:absolute; z-index:10; text-align:center; width: 100%;">
+                    <h1 style="color:#D4AF37; font-family: 'Amiri', serif; font-size:clamp(3rem, 10vw, 4rem); text-shadow: 2px 2px 10px #000; margin:0;">محمد & سارة</h1>
                 </div>
-                <button id="skip-btn" style="position:absolute; bottom:10%; padding:10px 25px; font-size:1.2rem; background:rgba(212,175,55,0.3); color:white; border:1px solid #D4AF37; border-radius:30px; cursor:pointer; z-index:10; font-family:'Cairo', sans-serif; backdrop-filter: blur(5px); transition: 0.3s;">دخول للموقع 🤍</button>
+                <button id="skip-btn" style="position:absolute; bottom:10%; padding:10px 25px; font-size:clamp(1rem, 3vw, 1.2rem); background:rgba(212,175,55,0.3); color:white; border:1px solid #D4AF37; border-radius:30px; cursor:pointer; z-index:10; font-family:'Cairo', sans-serif; backdrop-filter: blur(5px); transition: 0.3s;">دخول للموقع 🤍</button>
             `;
             parentDoc.body.appendChild(introDiv);
 
@@ -132,7 +133,7 @@ else:
     components.html(cinematic_intro_html, width=0, height=0)
 
     # ---------------------------------------------------------
-    # 3. تصميم الموقع الأساسي والـ CSS
+    # 3. تصميم الموقع الأساسي المتجاوب (Responsive CSS)
     # ---------------------------------------------------------
     st.markdown("""
         <style>
@@ -155,7 +156,7 @@ else:
         .main .block-container {
             z-index: 1;
             position: relative;
-            padding-top: 2rem;
+            padding-top: 1rem;
         }
         
         @keyframes pulse-gold {
@@ -166,9 +167,14 @@ else:
         .glowing-title {
             font-family: 'Amiri', serif; 
             color: #D4AF37; 
-            font-size: 5rem; 
+            font-size: clamp(3rem, 12vw, 5rem); /* خط يتجاوب مع الشاشة */
             margin-bottom: 0;
             animation: pulse-gold 3s infinite;
+        }
+        .sub-title {
+            font-family: 'Cairo', sans-serif; color: #E2E8F0; 
+            font-size: clamp(1rem, 4vw, 1.5rem); 
+            font-weight: 300; letter-spacing: 2px;
         }
         
         .content-box {
@@ -177,7 +183,7 @@ else:
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 30px;
+            padding: clamp(15px, 4vw, 30px);
             margin: 20px 0;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
         }
@@ -188,9 +194,9 @@ else:
     # 4. العنوان والعداد
     # ---------------------------------------------------------
     st.markdown("""
-        <div style="text-align: center; margin-bottom: 2rem; margin-top: 3rem;">
+        <div style="text-align: center; margin-bottom: 2rem; margin-top: 2rem;">
             <h1 class="glowing-title">محمد & سارة</h1>
-            <h3 style="font-family: 'Cairo', sans-serif; color: #E2E8F0; font-size: 1.5rem; font-weight: 300; letter-spacing: 2px;">ندعوكم لمشاركتنا أجمل لحظات العمر</h3>
+            <h3 class="sub-title">ندعوكم لمشاركتنا أجمل لحظات العمر</h3>
         </div>
     """, unsafe_allow_html=True)
 
@@ -198,14 +204,28 @@ else:
     <!DOCTYPE html>
     <html>
     <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap" rel="stylesheet">
     <style>
         body { display: flex; justify-content: center; align-items: center; background-color: transparent; margin: 0; font-family: 'Cairo', sans-serif; }
-        .glass-container { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); padding: 30px 50px; display: flex; gap: 40px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); direction: rtl; transition: 0.3s; }
+        .glass-container { 
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.15); padding: 30px 50px; 
+            display: flex; gap: 40px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); 
+            direction: rtl; transition: 0.3s; flex-wrap: wrap; justify-content: center;
+        }
         .glass-container:hover { transform: translateY(-5px); box-shadow: 0 12px 40px 0 rgba(212, 175, 55, 0.3); }
-        .time-box { display: flex; flex-direction: column; align-items: center; min-width: 90px; }
+        .time-box { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
         .number { font-size: 3.5rem; font-weight: 700; color: #D4AF37; margin: 0; line-height: 1; text-shadow: 0 0 15px rgba(212, 175, 55, 0.5); }
         .label { font-size: 1.2rem; color: #F8FAFC; margin-top: 5px; }
+        
+        /* استعلامات الهواتف للعداد */
+        @media (max-width: 600px) {
+            .glass-container { gap: 15px; padding: 20px; }
+            .number { font-size: 2.2rem; }
+            .label { font-size: 0.9rem; }
+            .time-box { min-width: 55px; }
+        }
     </style>
     </head>
     <body>
@@ -229,14 +249,13 @@ else:
     </body>
     </html>
     """
-    components.html(custom_timer_html, height=200)
-
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    # زيادة الارتفاع قليلاً ليتسع للعداد إذا التف (Wrap) على الهاتف
+    components.html(custom_timer_html, height=220)
 
     # ---------------------------------------------------------
     # 5. قسم مشوارنا
     # ---------------------------------------------------------
-    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: 3rem;'>قصتنا في صور 📷</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: clamp(2rem, 8vw, 3rem); margin-top: 20px;'>قصتنا في صور 📷</h2>", unsafe_allow_html=True)
     st.markdown("<div class='content-box'>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
@@ -252,17 +271,16 @@ else:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
     # ---------------------------------------------------------
-    # 6. قسم خريطة القاعة - بتصميم 3D عظيم
+    # 6. قسم خريطة القاعة - متجاوب مع الهواتف
     # ---------------------------------------------------------
-    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: 3rem; margin-top: 50px;'>موقع الحفل 📍</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: clamp(2rem, 8vw, 3rem); margin-top: 50px;'>موقع الحفل 📍</h2>", unsafe_allow_html=True)
 
     interactive_map_html = """
     <!DOCTYPE html>
     <html>
     <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
         .map-container {
@@ -285,19 +303,30 @@ else:
             max-width: 280px; transform: translateY(30px); opacity: 0; transition: all 0.5s ease 0.1s;
         }
         .map-container:hover .floating-card { transform: translateY(0); opacity: 1; }
-        .venue-title { color: #D4AF37; margin: 0 0 8px 0; font-family: 'Amiri', serif; font-size: 1.8rem; }
-        .venue-desc { color: #E2E8F0; margin: 0 0 20px 0; font-family: 'Cairo', sans-serif; font-size: 0.95rem; line-height: 1.6; }
+        .venue-title { color: #D4AF37; margin: 0 0 8px 0; font-family: 'Amiri', serif; font-size: 1.5rem; }
+        .venue-desc { color: #E2E8F0; margin: 0 0 20px 0; font-family: 'Cairo', sans-serif; font-size: 0.9rem; line-height: 1.6; }
         .btn-directions {
             display: block; background: linear-gradient(45deg, #D4AF37, #F3E5AB); color: #0F172A !important; padding: 10px 0;
             border-radius: 30px; text-decoration: none; font-weight: 900; font-family: 'Cairo', sans-serif; text-align: center;
             transition: all 0.3s ease; box-shadow: 0 0 15px rgba(212,175,55,0.4);
         }
         .btn-directions:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(212,175,55,0.8); }
+
+        /* تعديلات الموبايل للخريطة */
+        @media (max-width: 768px) {
+            .map-container { transform: none; box-shadow: 0 10px 20px rgba(0,0,0,0.5); border: 2px solid rgba(212, 175, 55, 0.6);}
+            .map-container:hover { transform: none; }
+            .floating-card { 
+                position: relative; bottom: 0; right: 0; max-width: 100%; border-radius: 0 0 25px 25px; 
+                transform: none; opacity: 1; border-right: none; border-top: 2px solid #D4AF37; padding: 15px;
+            }
+            .map-iframe { height: 300px; filter: none;}
+        }
     </style>
     </head>
-    <body style="margin:0; background: transparent; padding: 20px;">
+    <body style="margin:0; background: transparent; padding: 10px;">
         <div class="map-container">
-            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3322.993864119795!2d35.3934256764207!3d33.60546367332862!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151ee52e784728f9%3A0xaa57f0e88d65b592!2sSofia%20Palace!5e0!3m2!1sen!2slb!4v1772620814491!5m2!1sen!2slb" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3322.993864119795!2d35.3934256764207!3d33.60546367332862!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x151ee52e784728f9%3A0xaa57f0e88d65b592!2sSofia%20Palace!5e0!3m2!1sen!2slb!4v1772620814491!5m2!1sen!2slb" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             <div class="floating-card">
                 <h3 class="venue-title">Sofia Palace</h3>
                 <p class="venue-desc">قاعة الاحتفالات الكبرى الكلاسيكية<br>الرميلة، لبنان<br>بانتظاركم بكل حب 🤍</p>
@@ -310,18 +339,18 @@ else:
     components.html(interactive_map_html, height=550)
 
     st.markdown("""
-        <div style="text-align: center; margin-top: 20px;">
-            <p style="font-family: 'Amiri', serif; font-size: 1.5rem; color: #D4AF37;">
+        <div style="text-align: center; margin-top: 10px;">
+            <p style="font-family: 'Amiri', serif; font-size: clamp(1.2rem, 4vw, 1.5rem); color: #D4AF37;">
                 "دمتم لنا أهلاً وأحباباً نشاركهم أفراحنا"
             </p>
         </div>
     """, unsafe_allow_html=True)
 
     # =========================================================
-    # 7. نظام تأكيد الحضور (VIP RSVP) مع الروابط الذكية للـ QR
+    # 7. نظام تأكيد الحضور (VIP RSVP)
     # =========================================================
-    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: 3rem; margin-top: 60px;'>تأكيد الحضور 🎟️</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #E2E8F0; font-family: Cairo; font-size: 1.2rem;'>احجز مقعدك واستخرج تذكرتك الرقمية الخاصة</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: clamp(2rem, 8vw, 3rem); margin-top: 50px;'>تأكيد الحضور 🎟️</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #E2E8F0; font-family: Cairo; font-size: clamp(1rem, 3vw, 1.2rem);'>احجز مقعدك واستخرج تذكرتك الرقمية الخاصة</p>", unsafe_allow_html=True)
 
     with st.container():
         st.markdown("<div class='content-box'>", unsafe_allow_html=True)
@@ -337,15 +366,12 @@ else:
                 import qrcode
                 from io import BytesIO
                 
-                # ----------------------------------------------------
-                # التعديل هنا: تحويل بيانات التذكرة إلى رابط URL ذكي
-                # ----------------------------------------------------
-                BASE_URL = "http://localhost:8501" # غيّر هذا الرابط لاحقاً عند رفع الموقع على الإنترنت
+                # تذكير: غيّر هذا الرابط لاحقاً عند رفع الموقع
+                BASE_URL = "http://localhost:8501" 
                 encoded_name = urllib.parse.quote(rsvp_name)
                 encoded_count = urllib.parse.quote(guests_count)
                 ticket_url = f"{BASE_URL}/?vip=true&name={encoded_name}&count={encoded_count}"
                 
-                # تصميم الـ QR Code باللون الذهبي
                 qr = qrcode.QRCode(version=1, box_size=10, border=2)
                 qr.add_data(ticket_url)
                 qr.make(fit=True)
@@ -377,7 +403,7 @@ else:
     # =========================================================
     # 8. سجل التهاني الذكي (Smart AI Guestbook)
     # =========================================================
-    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: 3rem; margin-top: 60px;'>سجل التهاني 💌</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: clamp(2rem, 8vw, 3rem); margin-top: 50px;'>سجل التهاني 💌</h2>", unsafe_allow_html=True)
 
     with st.container():
         st.markdown("<div class='content-box'>", unsafe_allow_html=True)
@@ -402,8 +428,8 @@ else:
     # =========================================================
     # 9. رحلة تصميم منزل العمر (Teaser: Sneak Peek)
     # =========================================================
-    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: 3rem; margin-top: 60px;'>عشنا الصغير 🛋️</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #E2E8F0; font-family: Cairo; font-size: 1.2rem;'>نظرة خاطفة على تفاصيل وتصميم مملكتنا القادمة...</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: clamp(2rem, 8vw, 3rem); margin-top: 50px;'>عشنا الصغير 🛋️</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #E2E8F0; font-family: Cairo; font-size: clamp(1rem, 3vw, 1.2rem);'>نظرة خاطفة على تفاصيل وتصميم مملكتنا القادمة...</p>", unsafe_allow_html=True)
 
     st.markdown("<div class='content-box'>", unsafe_allow_html=True)
 
@@ -417,7 +443,7 @@ else:
 
     # تذييل الصفحة (توقيعك التقني)
     st.markdown("""
-        <div style="text-align: center; margin-top: 80px; padding-bottom: 20px;">
+        <div style="text-align: center; margin-top: 60px; padding-bottom: 20px;">
             <p style="font-family: 'Cairo', sans-serif; font-size: 0.9rem; color: rgba(226, 232, 240, 0.5);">
                 Designed & Powered by <span style="color: #D4AF37; font-weight: bold; letter-spacing: 1px;">MK Technology</span> © 2026
             </p>
