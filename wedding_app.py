@@ -4,6 +4,13 @@ import urllib.parse
 import pandas as pd
 import os
 
+from PIL import Image
+
+# إنشاء مجلد لحفظ صور جدار الذكريات تلقائياً
+PHOTOS_DIR = "wedding_photos"
+if not os.path.exists(PHOTOS_DIR):
+    os.makedirs(PHOTOS_DIR)
+
 # 1. إعداد الصفحة الأساسي
 st.set_page_config(page_title="Mohammad & Sarah Wedding", page_icon="✨", layout="wide")
 
@@ -14,8 +21,14 @@ DB_FILE = "guests_db.csv"
 
 def load_db():
     if not os.path.exists(DB_FILE):
-        return pd.DataFrame(columns=["الاسم", "عدد المرافقين", "إجمالي الأشخاص"])
-    return pd.read_csv(DB_FILE)
+        return pd.DataFrame(columns=["الاسم", "الجهة", "عدد المرافقين", "إجمالي الأشخاص", "رقم الطاولة"])
+    df = pd.read_csv(DB_FILE)
+    # تحديث قاعدة البيانات القديمة إن وجدت لتشمل الأعمدة الجديدة
+    if "الجهة" not in df.columns:
+        df["الجهة"] = "غير محدد"
+    if "رقم الطاولة" not in df.columns:
+        df["رقم الطاولة"] = "قيد الانتظار ⏳"
+    return df
 
 def save_db(df):
     df.to_csv(DB_FILE, index=False)
@@ -31,6 +44,39 @@ if query_params.get("admin") == "mk1234":
 <style>
 .stApp { background-color: #0F172A; }
 h1, h2, h3, p { font-family: 'Cairo', sans-serif; color: #E2E8F0; }
+
+div.stButton > button {
+    background: linear-gradient(45deg, #D4AF37, #F3E5AB) !important;
+    border: none !important;
+    border-radius: 30px !important;
+    padding: 10px 25px !important;
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4) !important;
+    transition: all 0.3s ease !important;
+}
+div.stButton > button:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.7) !important;
+}
+div.stButton > button p {
+    color: #000000 !important;
+    font-family: 'Cairo', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 1.3rem !important;
+    margin: 0 !important;
+}
+
+/* Timeline CSS */
+.timeline-container { direction: rtl; margin: 40px auto; max-width: 600px; position: relative; padding-right: 30px; }
+.timeline-container::before { content: ''; position: absolute; top: 0; right: 10px; height: 100%; width: 4px; background: rgba(212, 175, 55, 0.3); border-radius: 5px; }
+.timeline-item { position: relative; margin-bottom: 30px; }
+.timeline-dot { position: absolute; right: -31px; top: 5px; width: 20px; height: 20px; background: #D4AF37; border-radius: 50%; box-shadow: 0 0 15px rgba(212, 175, 55, 0.8); }
+.timeline-content { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(212, 175, 55, 0.3); padding: 15px 20px; border-radius: 15px; }
+.timeline-content h4 { color: #D4AF37; font-family: 'Amiri', serif; margin: 0 0 5px 0; font-size: 1.5rem; }
+.timeline-content p { color: #E2E8F0; font-family: 'Cairo', sans-serif; margin: 0; font-size: 1.1rem; text-align: right; }
+
+/* Calendar Sync Button */
+.calendar-btn { display: block; background: rgba(255, 255, 255, 0.1); border: 1px solid #D4AF37; color: #D4AF37 !important; padding: 12px 20px; border-radius: 30px; text-decoration: none; font-family: 'Cairo', sans-serif; font-weight: bold; text-align: center; max-width: 300px; margin: 20px auto; transition: 0.3s; backdrop-filter: blur(5px); }
+.calendar-btn:hover { background: #D4AF37; color: #0F172A !important; transform: translateY(-3px); }
 </style>
     """, unsafe_allow_html=True)
     
@@ -40,20 +86,32 @@ h1, h2, h3, p { font-family: 'Cairo', sans-serif; color: #E2E8F0; }
     df = load_db()
     
     if not df.empty:
-        total_guests = df["إجمالي الأشخاص"].sum()
+        # عرض الإحصائيات مقسمة
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.info(f"🤵 معازيم العريس: {df[df['الجهة'] == 'جهة العريس 🤵']['إجمالي الأشخاص'].sum()}")
+        with col2:
+            st.info(f"👰 معازيم العروس: {df[df['الجهة'] == 'جهة العروس 👰']['إجمالي الأشخاص'].sum()}")
+        with col3:
+            st.success(f"👥 الإجمالي الكلي: {df['إجمالي الأشخاص'].sum()}")
+            
+        st.markdown("### 📋 قائمة الضيوف وتعيين الطاولات")
+        st.markdown("يمكنك تعديل **(رقم الطاولة)** مباشرة من الجدول أدناه، ثم اضغط حفظ.")
         
-        st.markdown(f"""
-<div style='background: rgba(212, 175, 55, 0.1); border: 2px solid #D4AF37; border-radius: 15px; padding: 20px; text-align: center; margin: 30px auto; max-width: 400px;'>
-    <h3 style='margin: 0; color: #D4AF37;'>إجمالي الحضور المتوقع</h3>
-    <h1 style='font-size: 4rem; margin: 10px 0; color: #FFFFFF;'>{total_guests}</h1>
-    <p style='margin: 0;'>شخص (يشمل المرافقين)</p>
-</div>
-        """, unsafe_allow_html=True)
+        # جدول تفاعلي يسمح لك بتعديل رقم الطاولة فقط
+        edited_df = st.data_editor(
+            df, 
+            disabled=["الاسم", "الجهة", "عدد المرافقين", "إجمالي الأشخاص"], 
+            use_container_width=True,
+            hide_index=True
+        )
         
-        st.dataframe(df, use_container_width=True)
-        
-        csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("تحميل قائمة الحضور (Excel/CSV) 📥", data=csv, file_name="wedding_guests.csv", mime="text/csv")
+        if st.button("💾 حفظ أرقام الطاولات والتعديلات"):
+            save_db(edited_df)
+            st.success("تم تحديث أرقام الطاولات بنجاح! ستظهر للضيوف في تذاكرهم فوراً.")
+            
+        csv = edited_df.to_csv(index=False).encode('utf-8')
+        st.download_button("تحميل القائمة كملف Excel/CSV 📥", data=csv, file_name="wedding_guests.csv", mime="text/csv")
     else:
         st.info("لم يقم أحد بتأكيد الحضور حتى الآن.")
         
@@ -64,8 +122,22 @@ h1, h2, h3, p { font-family: 'Cairo', sans-serif; color: #E2E8F0; }
 
 # 2. حالة صفحة تذكرة الـ VIP
 elif "vip" in query_params:
-    guest_name = query_params.get("name", "ضيفنا الكريم")
-    guests_count = query_params.get("count", "بدون مرافقين")
+    encoded_name = query_params.get("name", "")
+    guest_name = urllib.parse.unquote(encoded_name)
+    
+    # جلب تفاصيل الضيف الحية من قاعدة البيانات
+    df = load_db()
+    guest_data = df[df['الاسم'] == guest_name]
+    
+    if not guest_data.empty:
+        row = guest_data.iloc[0]
+        guests_count = row['عدد المرافقين']
+        guest_side = row['الجهة']
+        table_num = row['رقم الطاولة']
+    else:
+        guests_count = "غير معروف"
+        guest_side = "غير محدد"
+        table_num = "قيد الانتظار ⏳"
     
     st.markdown("""
 <style>
@@ -84,6 +156,10 @@ header {visibility: hidden;}
 @keyframes slide-up { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .vip-badge { background: linear-gradient(45deg, #D4AF37, #F3E5AB); color: #000; padding: 5px 20px; border-radius: 30px; font-weight: bold; font-family: 'Cairo', sans-serif; font-size: clamp(1rem, 3vw, 1.2rem); display: inline-block; margin-bottom: 20px; }
+
+div.stButton > button { background: linear-gradient(45deg, #D4AF37, #F3E5AB) !important; border: none !important; border-radius: 30px !important; padding: 10px 30px !important; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4) !important; transition: all 0.3s ease !important; }
+div.stButton > button:hover { transform: translateY(-3px) !important; box-shadow: 0 8px 25px rgba(212, 175, 55, 0.7) !important; }
+div.stButton > button p { color: #000000 !important; font-family: 'Cairo', sans-serif !important; font-weight: 900 !important; font-size: 1.3rem !important; margin: 0 !important; }
 </style>
     """, unsafe_allow_html=True)
     
@@ -95,11 +171,12 @@ header {visibility: hidden;}
     <h1>أهلاً بك يا {guest_name}</h1>
     <p>تذكرتك الملكية مفعلة وجاهزة.</p>
     <hr style="border-color: rgba(212,175,55,0.3); margin: 20px 0;">
-    <p style="color: var(--vip-muted) !important; font-size: clamp(0.9rem, 3vw, 1.1rem) !important; text-align: right; direction: rtl;">
-        <b>الحدث:</b> حفل زفاف محمد وسارة 💍<br>
-        <b>عدد المرافقين المسجلين:</b> {guests_count}<br>
-        <b>الحالة:</b> <span style="color: #4ade80;">تم تأكيد الحضور والتسجيل بنجاح ✔️</span>
-    </p>
+    <div style="color: var(--vip-text) !important; font-family: 'Cairo', sans-serif; font-size: clamp(1rem, 3vw, 1.1rem) !important; text-align: right; direction: rtl; line-height: 2;">
+        <b>المدعو من:</b> {guest_side}<br>
+        <b>المرافقين المسجلين:</b> {guests_count}<br>
+        <b style="color: #D4AF37; font-size: 1.3rem;">رقم الطاولة:</b> <span style="background: rgba(212,175,55,0.2); padding: 2px 10px; border-radius: 5px;">{table_num}</span><br>
+        <b>الحالة:</b> <span style="color: #4ade80;">تم تأكيد الحضور ✔️</span>
+    </div>
 </div>
     """, unsafe_allow_html=True)
     
@@ -140,6 +217,53 @@ header, #MainMenu, footer {visibility: hidden;}
 .glowing-title { font-size: clamp(3rem, 12vw, 5rem) !important; margin-bottom: 0; animation: pulse-gold 3s infinite; }
 
 .content-box { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: clamp(15px, 4vw, 30px); margin: 20px 0; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); }
+
+/* تصميم الأزرار العامة */
+div.stButton > button { background: linear-gradient(45deg, var(--primary-gold), var(--light-gold)) !important; border: none !important; border-radius: 30px !important; padding: 10px 25px !important; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4) !important; transition: all 0.3s ease !important; width: 100% !important; }
+div.stButton > button:hover { transform: translateY(-3px) !important; box-shadow: 0 8px 25px rgba(212, 175, 55, 0.7) !important; }
+div.stButton > button:focus { box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.5) !important; }
+div.stButton > button p { color: #000000 !important; font-family: 'Cairo', sans-serif !important; font-weight: 900 !important; font-size: 1.3rem !important; margin: 0 !important; }
+
+/* تصميم زر الـ Wish Money التفاعلي */
+.wish-money-box {
+    background: linear-gradient(135deg, rgba(225, 29, 72, 0.15), rgba(147, 51, 234, 0.15));
+    border: 2px dashed #E11D48;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(225, 29, 72, 0.1);
+    transition: transform 0.3s ease;
+}
+.wish-money-box:hover {
+    transform: scale(1.02);
+    box-shadow: 0 15px 40px rgba(225, 29, 72, 0.2);
+}
+.wish-btn {
+    display: inline-block;
+    background: linear-gradient(45deg, #E11D48, #9333EA) !important;
+    color: #FFFFFF !important;
+    font-family: 'Cairo', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: clamp(1.1rem, 3vw, 1.4rem) !important;
+    text-decoration: none !important;
+    padding: 15px 35px !important;
+    border-radius: 40px !important;
+    box-shadow: 0 10px 25px rgba(225, 29, 72, 0.4) !important;
+    transition: all 0.3s ease !important;
+    margin-top: 15px;
+    animation: pulse-wish 2s infinite;
+}
+.wish-btn:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 15px 35px rgba(225, 29, 72, 0.6) !important;
+    color: #FFFFFF !important;
+}
+@keyframes pulse-wish {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
 </style>
     """, unsafe_allow_html=True)
 
@@ -158,7 +282,7 @@ header, #MainMenu, footer {visibility: hidden;}
             <div style="position:absolute; z-index:10; text-align:center; width: 100%;">
                 <h1 style="color:#D4AF37; font-family: 'Amiri', serif; font-size:clamp(3rem, 10vw, 4rem); text-shadow: 2px 2px 10px #000; margin:0;">محمد & سارة</h1>
             </div>
-            <button id="skip-btn" style="position:absolute; bottom:10%; padding:10px 25px; font-size:clamp(1rem, 3vw, 1.2rem); background:rgba(212,175,55,0.3); color:white; border:1px solid #D4AF37; border-radius:30px; cursor:pointer; z-index:10; font-family:'Cairo', sans-serif; backdrop-filter: blur(5px); transition: 0.3s;">دخول للموقع 🤍</button>
+            <button id="skip-btn" style="position:absolute; bottom:10%; padding:10px 30px; background: linear-gradient(45deg, #D4AF37, #F3E5AB); color: #000000; font-weight: 900; font-size: 1.3rem; border:none; border-radius:30px; cursor:pointer; z-index:10; font-family:'Cairo', sans-serif; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.5); transition: 0.3s;">دخول للموقع 🤍</button>
         `;
         parentDoc.body.appendChild(introDiv);
         const vid = parentDoc.getElementById('intro-vid');
@@ -217,6 +341,66 @@ header, #MainMenu, footer {visibility: hidden;}
     components.html(custom_timer_html, height=220)
     st.markdown("<br><br>", unsafe_allow_html=True)
 
+# زر مزامنة التقويم
+    cal_url = "https://calendar.google.com/calendar/render?action=TEMPLATE&text=حفل+زفاف+محمد+وسارة&dates=20260531T160000Z/20260531T210000Z&details=بانتظاركم+لنصنع+أجمل+الذكريات!&location=Sofia+Palace,+Rmeileh,+Lebanon"
+    st.markdown(f'<a href="{cal_url}" target="_blank" class="calendar-btn">📅 أضف الموعد إلى تقويمك</a>', unsafe_allow_html=True)
+
+    # ---------------------------------------------------------
+    # جدول الليلة التفاعلي (التصميم الجديد الواضح)
+    # ---------------------------------------------------------
+    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: clamp(2rem, 8vw, 3rem); margin-top: 50px;'>جدول الليلة ⏳</h2>", unsafe_allow_html=True)
+    
+    st.markdown("""
+        <style>
+        .timeline-container { direction: rtl; margin: 40px auto; max-width: 700px; position: relative; padding-right: 40px; }
+        
+        /* الخط الذهبي العمودي المضيء */
+        .timeline-container::before { content: ''; position: absolute; top: 0; right: 15px; height: 100%; width: 4px; background: linear-gradient(to bottom, #D4AF37, #F3E5AB, #D4AF37); border-radius: 5px; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+        
+        .timeline-item { position: relative; margin-bottom: 40px; }
+        
+        /* الدوائر الذهبية المضبوطة على الخط */
+        .timeline-dot { position: absolute; right: -33px; top: 15px; width: 24px; height: 24px; background: #D4AF37; border: 4px solid #0F172A; border-radius: 50%; box-shadow: 0 0 15px rgba(212, 175, 55, 0.9); z-index: 2; }
+        
+        /* الصناديق الزجاجية الداكنة لبروز النص */
+        .timeline-content { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(212, 175, 55, 0.4); border-right: 5px solid #D4AF37; padding: 20px 25px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6); transition: all 0.3s ease; }
+        .timeline-content:hover { transform: translateX(-10px); border-color: #D4AF37; box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3); }
+        
+        /* نصوص واضحة جداً (ذهبي للوقت، أبيض ناصع للتفاصيل) */
+        .timeline-content h4 { color: #D4AF37 !important; font-family: 'Amiri', serif !important; margin: 0 0 10px 0 !important; font-size: 1.8rem !important; font-weight: bold !important; }
+        .timeline-content p { color: #FFFFFF !important; font-family: 'Cairo', sans-serif !important; margin: 0 !important; font-size: 1.2rem !important; line-height: 1.6 !important; text-align: right !important; font-weight: bold !important; }
+        
+        /* توافق تام مع شاشات الهواتف */
+        @media (max-width: 600px) {
+            .timeline-container { padding-right: 30px; }
+            .timeline-container::before { right: 10px; }
+            .timeline-dot { right: -25px; width: 20px; height: 20px; top: 18px;}
+            .timeline-content { padding: 15px; }
+            .timeline-content h4 { font-size: 1.4rem !important; }
+            .timeline-content p { font-size: 1.1rem !important; }
+        }
+        </style>
+
+        <div class="timeline-container">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content"><h4>🕖 07:00 م</h4><p>استقبال الأحباب وبداية التجمع</p></div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content"><h4>🕗 08:00 م</h4><p>الزفة الملكية ودخول العرسان</p></div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content"><h4>🍽️ 09:30 م</h4><p>عشاء العرسان (بوفيه مفتوح)</p></div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content"><h4>🎂 11:00 م</h4><p>قطع الكيكة وصنع الذكريات</p></div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
     st.markdown("<h2>قصتنا في صور 📷</h2>", unsafe_allow_html=True)
     st.markdown("<div class='content-box'>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
@@ -247,7 +431,7 @@ header, #MainMenu, footer {visibility: hidden;}
     .map-container:hover .floating-card { transform: translateY(0); opacity: 1; }
     .venue-title { color: #D4AF37; margin: 0 0 8px 0; font-family: 'Amiri', serif; font-size: 1.5rem; }
     .venue-desc { color: #E2E8F0; margin: 0 0 20px 0; font-family: 'Cairo', sans-serif; font-size: 0.9rem; line-height: 1.6; }
-    .btn-directions { display: block; background: linear-gradient(45deg, #D4AF37, #F3E5AB); color: #0F172A !important; padding: 10px 0; border-radius: 30px; text-decoration: none; font-weight: 900; font-family: 'Cairo', sans-serif; text-align: center; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
+    .btn-directions { display: block; background: linear-gradient(45deg, #D4AF37, #F3E5AB); color: #000000 !important; padding: 10px 0; border-radius: 30px; text-decoration: none; font-weight: 900; font-size: 1.1rem; font-family: 'Cairo', sans-serif; text-align: center; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(212,175,55,0.4); }
     .btn-directions:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(212,175,55,0.8); }
     @media (max-width: 768px) { .map-container { transform: none; box-shadow: 0 10px 20px rgba(0,0,0,0.5); border: 2px solid rgba(212, 175, 55, 0.6);} .map-container:hover { transform: none; } .floating-card { position: relative; bottom: 0; right: 0; max-width: 100%; border-radius: 0 0 25px 25px; transform: none; opacity: 1; border-right: none; border-top: 2px solid #D4AF37; padding: 15px; } .map-iframe { height: 300px; filter: none;} }
 </style>
@@ -275,63 +459,143 @@ header, #MainMenu, footer {visibility: hidden;}
         
         col_form1, col_form2 = st.columns(2)
         with col_form1:
-            rsvp_name = st.text_input("الاسم الكريم", placeholder="اكتب اسمك هنا...")
+            rsvp_name = st.text_input("الاسم الكريم (الثنائي)", placeholder="مثال: أحمد خليل...")
         with col_form2:
-            guests_count = st.selectbox("عدد المرافقين", ["بدون مرافقين", "مرافق واحد", "مرافقان", "3 مرافقين"])
+            guest_side = st.selectbox("من أي جهة؟", ["جهة العريس 🤵", "جهة العروس 👰"])
+            
+        guests_count = st.selectbox("عدد المرافقين (بدون احتسابك)", ["بدون مرافقين", "مرافق واحد", "مرافقان", "3 مرافقين", "4 مرافقين"])
         
         if st.button("تأكيد الحضور واستخراج التذكرة 🎫"):
             if rsvp_name:
                 df = load_db()
+                import qrcode
+                from io import BytesIO
                 
+                # إعداد الـ QR Code (يُنشأ في كلتا الحالتين: جديد أو مسجل مسبقاً)
+                BASE_URL = "https://mohamad-sarahwedding-pycf9neap43w7zh9pewmhu.streamlit.app" 
+                encoded_name = urllib.parse.quote(rsvp_name.strip())
+                ticket_url = f"{BASE_URL}/?vip=true&name={encoded_name}"
+                
+                qr = qrcode.QRCode(version=1, box_size=10, border=2)
+                qr.add_data(ticket_url)
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="#D4AF37", back_color="#0F172A")
+                buf = BytesIO()
+                img.save(buf, format="PNG")
+                
+                # التحقق الذكي من التكرار
                 if rsvp_name.strip() in df['الاسم'].values:
-                    st.error(f"عذراً يا {rsvp_name}، لقد قمت بتأكيد حضورك مسبقاً! لا يمكن الحجز مرتين.")
+                    st.info(f"أهلاً بعودتك يا {rsvp_name}! لقد قمت بتأكيد حضورك مسبقاً. تذكرتك جاهزة أدناه 👇")
                 else:
-                    import qrcode
-                    from io import BytesIO
-                    
-                    companions_map = {"بدون مرافقين": 0, "مرافق واحد": 1, "مرافقان": 2, "3 مرافقين": 3}
+                    companions_map = {"بدون مرافقين": 0, "مرافق واحد": 1, "مرافقان": 2, "3 مرافقين": 3, "4 مرافقين": 4}
                     total_persons = 1 + companions_map.get(guests_count, 0)
                     
-                    new_guest = pd.DataFrame([{"الاسم": rsvp_name.strip(), "عدد المرافقين": guests_count, "إجمالي الأشخاص": total_persons}])
+                    new_guest = pd.DataFrame([{
+                        "الاسم": rsvp_name.strip(), 
+                        "الجهة": guest_side, 
+                        "عدد المرافقين": guests_count, 
+                        "إجمالي الأشخاص": total_persons,
+                        "رقم الطاولة": "قيد الانتظار ⏳"
+                    }])
                     df = pd.concat([df, new_guest], ignore_index=True)
                     save_db(df)
-                    
-                    BASE_URL = "https://mohamad-sarahwedding-pycf9neap43w7zh9pewmhu.streamlit.app" 
-                    encoded_name = urllib.parse.quote(rsvp_name)
-                    encoded_count = urllib.parse.quote(guests_count)
-                    ticket_url = f"{BASE_URL}/?vip=true&name={encoded_name}&count={encoded_count}"
-                    
-                    qr = qrcode.QRCode(version=1, box_size=10, border=2)
-                    qr.add_data(ticket_url)
-                    qr.make(fit=True)
-                    img = qr.make_image(fill_color="#D4AF37", back_color="#0F172A")
-                    
-                    buf = BytesIO()
-                    img.save(buf, format="PNG")
-                    
                     st.success(f"تم تأكيد حضورك يا {rsvp_name}! نحن بانتظارك.")
                     st.balloons()
-                    
-                    st.markdown(f"""
+                
+                # عرض التذكرة للضيف (سواء كان جديداً أو مسجلاً مسبقاً)
+                st.markdown(f"""
 <div style='background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.9)); border: 2px dashed #D4AF37; padding: 20px; border-radius: 15px; text-align: center; margin-top: 20px; box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);'>
     <h3 style='color: #D4AF37; font-family: Amiri;'>تذكرة دخول VIP 🌟</h3>
     <p style='color: #E2E8F0; font-family: Cairo; font-size: 1.2rem;'>الضيف المُميز: <b>{rsvp_name}</b></p>
-    <p style='color: #cbd5e1; font-family: Cairo; font-size: 0.9rem;'>امسح الرمز أدناه بهاتفك للدخول لصفحة تذكرتك الخاصة</p>
+    <p style='color: #cbd5e1; font-family: Cairo; font-size: 0.9rem;'>امسح الرمز أو احتفظ به (سيتم تحديث رقم الطاولة تلقائياً عند مسحه يوم الحفل)</p>
 </div>
-                    """, unsafe_allow_html=True)
-                    
-                    col_qr1, col_qr2, col_qr3 = st.columns([1, 1, 1])
-                    with col_qr2:
-                        st.image(buf, use_container_width=True, caption="امسحني بكاميرا الهاتف 📸")
+                """, unsafe_allow_html=True)
+                
+                col_qr1, col_qr2, col_qr3 = st.columns([1, 1, 1])
+                with col_qr2:
+                    st.image(buf, use_container_width=True, caption="امسحني بكاميرا الهاتف 📸")
+
+# -- استخراج رقم الطاولة الحالي للرسالة --
+                current_table = "قيد الانتظار ⏳"
+                if rsvp_name.strip() in df['الاسم'].values:
+                    current_table = df[df['الاسم'] == rsvp_name.strip()].iloc[0]['رقم الطاولة']
+
+                # -- زر الإرسال إلى واتساب --
+                WISH_MONEY_LINK = "ضع_رابط_ويش_ماني_هنا" # ضع رابطك هنا
+                wa_message = f"✨ تذكرة زفاف محمد وسارة ✨\n\n👤 الاسم: {rsvp_name}\n🎫 الطاولة: {current_table}\n🔗 رابط التذكرة (QR): {ticket_url}\n\n🎁 لإرسال النقوط والمباركة عبر Wish Money:\n{WISH_MONEY_LINK}"
+                wa_url = f"https://wa.me/?text={urllib.parse.quote(wa_message)}"
+                
+                st.markdown(f"""
+                <a href="{wa_url}" target="_blank" style="display: block; background: #25D366; color: white; text-align: center; padding: 12px; border-radius: 30px; text-decoration: none; font-family: 'Cairo', sans-serif; font-weight: bold; margin-top: 15px; box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4); transition: 0.3s;">
+                    💬 احتفظ بالتذكرة ورابط الـ Wish Money عبر واتساب
+                </a>
+                """, unsafe_allow_html=True)
                         
             else:
                 st.error("يرجى إدخال اسمك أولاً لنتمكن من إصدار تذكرتك!")
                 
         st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<h2>سجل التهاني 💌</h2>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+    # جدار الذكريات المباشر 📸
+    # ---------------------------------------------------------
+    st.markdown("<h2 style='text-align: center; color: #D4AF37; font-family: Amiri; font-size: clamp(2rem, 8vw, 3rem); margin-top: 50px;'>جدار الذكريات 📸</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #E2E8F0; font-family: Cairo; font-size: clamp(1rem, 3vw, 1.2rem);'>لا تنسوا التقاط أجمل اللحظات العفوية يوم الزفاف ورفعها هنا لنحتفظ بها كذكرى خالدة!</p>", unsafe_allow_html=True)
+
     with st.container():
         st.markdown("<div class='content-box'>", unsafe_allow_html=True)
+        
+        # أداة رفع الصور
+        uploaded_file = st.file_uploader("التقط صورة أو اختر من هاتفك لرفعها الآن 🤳", type=["jpg", "jpeg", "png"])
+        if uploaded_file is not None:
+            file_path = os.path.join(PHOTOS_DIR, uploaded_file.name)
+            with open(file_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            st.success("تم رفع الصورة بنجاح! شكراً لمشاركتنا هذه اللحظة 🤍")
+            
+        # عرض الصور المرفوعة على شكل شبكة (Grid)
+        saved_photos = os.listdir(PHOTOS_DIR)
+        if saved_photos:
+            st.markdown("<hr style='border-color: rgba(212,175,55,0.3);'>", unsafe_allow_html=True)
+            st.markdown("<h4 style='text-align: center; color: #D4AF37; font-family: Cairo;'>الصور المرفوعة حديثاً ✨</h4><br>", unsafe_allow_html=True)
+            
+            cols = st.columns(3) # تقسيم الصور إلى 3 أعمدة
+            for i, photo_name in enumerate(saved_photos):
+                img_path = os.path.join(PHOTOS_DIR, photo_name)
+                try:
+                    image = Image.open(img_path)
+                    cols[i % 3].image(image, use_container_width=True)
+                except:
+                    pass
+        else:
+            st.info("جدار الذكريات ينتظر إبداعاتكم يوم الحفل! 🌟")
+            
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+    # ---------------------------------------------------------
+    # 8. سجل التهاني والنقوط
+    # ---------------------------------------------------------
+    st.markdown("<h2>سجل التهاني والنقوط 💌</h2>", unsafe_allow_html=True)
+    with st.container():
+        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
+        
+        # قسم النقوط (Wish Money) التفاعلي
+        wish_money_html = """
+        <div class="wish-money-box">
+            <h3 style="color: #E11D48; font-family: 'Amiri', serif; font-size: clamp(1.8rem, 5vw, 2.5rem); margin-top: 0; margin-bottom: 10px; text-shadow: 0 0 10px rgba(225, 29, 72, 0.3);">💖تكتمل فرحتنا بوجودكم بيننا </h3>
+            <p style="color: #E2E8F0; font-family: 'Cairo', sans-serif; font-size: clamp(1rem, 3vw, 1.2rem); margin-bottom: 20px; line-height: 1.8;">
+                <br> مشاركتكم لنا هذه اللحظات السعيدة تعني لنا الكثير وهي أكبر هدية<b></b> 
+            </p>
+            <a href="ضع_رابط_ويش_ماني_هنا" target="_blank" class="wish-btn">
+                ✨ إرسال النقوط عبر Wish Money ✨
+            </a>
+        </div>
+        """
+        st.markdown(wish_money_html, unsafe_allow_html=True)
+
+        # سجل التهاني النصي
         guest_msg_name = st.text_input("اسمك (لكي نشكرك)", key="msg_name")
         message = st.text_area("اترك لنا ذكرى جميلة من قلبك...", key="msg", height=100)
         
