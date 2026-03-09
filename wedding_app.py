@@ -391,28 +391,81 @@ div.stDownloadButton > button:hover, div.stButton > button[kind="secondary"]:hov
         view_df = view_df.copy()
         view_df["حذف؟"] = False
 
-        # الحاوية الزجاجية للجدول
+        # الحاوية الزجاجية للبطاقات الذكية
         st.markdown("<div class='admin-table-container'>", unsafe_allow_html=True)
         
         # مؤشر الفلتر النشط
         filter_color = "#3B82F6" if "العريس" in filt else "#EC4899" if "العروس" in filt else "#D4AF37"
-        st.markdown(f"<div style='text-align: center;'><div class='active-filter-badge' style='border-color: {filter_color};'>الجدول يعرض حالياً: <span style='color: {filter_color};'>{filt}</span></div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align: center;'><div class='active-filter-badge' style='border-color: {filter_color};'>القائمة تعرض حالياً: <span style='color: {filter_color};'>{filt}</span></div></div>", unsafe_allow_html=True)
 
-        st.caption("💡 حدد (رقم الطاولة) لتعديلها. للحذف: ضع علامة (✓) بجانب الاسم، ثم اضغط حفظ بالأسفل.")
-        edited = st.data_editor(
-            view_df,
-            column_config={
-                "حذف؟":            st.column_config.CheckboxColumn("🗑️", default=False),
-                "الاسم":           st.column_config.TextColumn("👤 الاسم الكريم", disabled=True),
-                "الجهة":           st.column_config.TextColumn("📍 الجهة", disabled=True),
-                "عدد المرافقين":   st.column_config.TextColumn("المرافقين", disabled=True),
-                "إجمالي الأشخاص": st.column_config.NumberColumn("الإجمالي", disabled=True),
-                "رقم الطاولة":    st.column_config.TextColumn("🪑 رقم الطاولة"),
-            },
-            use_container_width=True, hide_index=True, height=400
-        )
+        st.caption("💡 اكتب رقم الطاولة في المربع مباشرة للحفظ. وللحذف حدد علامة (🗑️).")
+
+        # ترويسة القائمة (Header)
+        st.markdown("""
+        <div style='display: flex; color: #94A3B8; font-size: 0.95rem; font-weight: bold; margin-bottom: 15px; padding: 0 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; direction: rtl;'>
+            <div style='flex: 3;'>👤 بيانات الضيف</div>
+            <div style='flex: 1; text-align: center;'>👥 العدد</div>
+            <div style='flex: 2; text-align: center;'>🪑 الطاولة</div>
+            <div style='flex: 1; text-align: center;'>🗑️ إجراء</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # توليد البطاقات الذكية لكل ضيف
+        for index, row in view_df.iterrows():
+            g_name = row["الاسم"]
+            g_side = row["الجهة"]
+            g_total = row["إجمالي الأشخاص"]
+            g_table = row["رقم الطاولة"]
+
+            # تحديد الأيقونة حسب الجهة
+            icon = "🤵" if "العريس" in g_side else "👰" if "العروس" in g_side else "👤"
+
+            with st.container():
+                c1, c2, c3, c4 = st.columns([3, 1, 2, 1])
+                
+                with c1:
+                    st.markdown(f"<div style='padding-top: 5px; line-height: 1.4; direction: rtl;'><b style='color:#F1F5F9; font-size:1.1rem;'>{icon} {g_name}</b><br><span style='color:#64748B; font-size:0.8rem;'>{g_side}</span></div>", unsafe_allow_html=True)
+                
+                with c2:
+                    st.markdown(f"<div style='text-align:center; padding-top: 12px; color:#E2E8F0; font-weight:bold; font-size:1.1rem;'>{g_total}</div>", unsafe_allow_html=True)
+                
+                with c3:
+                    # حقل إدخال مخفي التسمية لتوفير المساحة
+                    st.text_input("الطاولة", value=g_table, key=f"tbl_{g_name}", label_visibility="collapsed")
+                
+                with c4:
+                    # زر الحذف
+                    st.markdown("<div style='padding-top: 6px; text-align:center;'>", unsafe_allow_html=True)
+                    st.checkbox("حذف", key=f"del_{g_name}", label_visibility="collapsed")
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    
+                st.markdown("<hr style='margin: 8px 0; border-color: rgba(255,255,255,0.04);'>", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
+        
+        # أزرار الإجراءات السفلية
+        col_save, col_export = st.columns([2, 1])
+        with col_save:
+            if st.button("💾 حفظ التعديلات الشاملة", type="primary", use_container_width=True):
+                # حفظ البيانات من الحقول المباشرة إلى Supabase
+                for index, row in view_df.iterrows():
+                    name = row["الاسم"]
+                    new_table = st.session_state.get(f"tbl_{name}", row["رقم الطاولة"])
+                    to_delete = st.session_state.get(f"del_{name}", False)
+
+                    if to_delete:
+                        delete_guest(name)
+                    elif new_table != row["رقم الطاولة"]:
+                        update_table_number(name, new_table)
+                        
+                st.success("✅ تم تحديث قاعدة البيانات بنجاح!")
+                st.rerun()
+                
+        with col_export:
+            csv = df.to_csv(index=False).encode("utf-8")
+            st.download_button("📥 تحميل الإكسيل", data=csv, file_name="wedding_guests.csv", mime="text/csv", use_container_width=True)
+            
+        st.markdown("</div>", unsafe_allow_html=True) # إغلاق الحاوية الزجاجية
         
         # أزرار الإجراءات السفلية
         col_save, col_export = st.columns([2, 1])
