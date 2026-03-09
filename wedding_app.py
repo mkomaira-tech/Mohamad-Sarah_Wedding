@@ -277,11 +277,99 @@ if query_params.get("admin") == ADMIN_PASSWORD:
 
     st.markdown("""
 <style>
-.stApp { background:#0F172A !important; background-image:none !important; }
-.stApp::before { display:none; }
-</style>""", unsafe_allow_html=True)
+/* خلفية اللوحة (Dark Mode Dashboard) */
+.stApp { background: #070B14 !important; background-image: radial-gradient(circle at 50% 0%, #1A233A 0%, #070B14 80%) !important; }
+.stApp::before { display: none; }
 
-    st.markdown("<h1 style='text-align:center;color:#D4AF37;font-family:Amiri;margin:18px 0 8px;'>👑 لوحة تحكم العريس 👑</h1>", unsafe_allow_html=True)
+/* تنسيق الخطوط */
+h1, h2, h3, p { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; }
+
+/* تصميم كروت الإحصائيات العلوية (KPI Cards) */
+div[data-testid="column"] { padding: 0 10px; }
+div[data-testid="column"] div.stButton > button {
+    border-radius: 16px !important;
+    height: 120px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
+    width: 100% !important;
+}
+div[data-testid="column"] div.stButton > button:hover { transform: translateY(-5px) !important; filter: brightness(1.15); }
+div[data-testid="column"] div.stButton > button p { font-family: 'Cairo', sans-serif !important; font-weight: 900 !important; font-size: 1.4rem !important; line-height: 1.6 !important; margin: 0 !important; }
+
+/* كرت العريس (أزرق داكن/مضيء) */
+div[data-testid="column"]:nth-child(1) div.stButton > button {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 58, 138, 0.3)) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    border-right: 5px solid #3B82F6 !important;
+}
+div[data-testid="column"]:nth-child(1) div.stButton > button p { color: #93C5FD !important; }
+
+/* كرت العروس (وردي داكن/مضيء) */
+div[data-testid="column"]:nth-child(2) div.stButton > button {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(157, 23, 77, 0.3)) !important;
+    border: 1px solid rgba(236, 72, 153, 0.2) !important;
+    border-right: 5px solid #EC4899 !important;
+}
+div[data-testid="column"]:nth-child(2) div.stButton > button p { color: #F9A8D4 !important; }
+
+/* كرت الإجمالي (ذهبي داكن/مضيء) */
+div[data-testid="column"]:nth-child(3) div.stButton > button {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(184, 134, 11, 0.3)) !important;
+    border: 1px solid rgba(212, 175, 55, 0.2) !important;
+    border-right: 5px solid #D4AF37 !important;
+}
+div[data-testid="column"]:nth-child(3) div.stButton > button p { color: #FDE047 !important; }
+
+/* الحاوية الزجاجية للجدول (Glassmorphism) */
+.admin-table-container {
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 25px;
+    margin-top: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+/* شريط الفلتر النشط */
+.active-filter-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #E2E8F0;
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+/* أزرار الإجراءات (Primary & Secondary) */
+div.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #059669, #10B981) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 50px !important;
+    padding: 12px 0 !important;
+    font-size: 1.1rem !important;
+    font-weight: bold !important;
+    box-shadow: 0 5px 20px rgba(16, 185, 129, 0.3) !important;
+}
+div.stButton > button[kind="primary"]:hover { transform: translateY(-2px) !important; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5) !important; }
+
+/* زر تحميل CSV وخروج */
+div.stDownloadButton > button, div.stButton > button[kind="secondary"] {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #cbd5e1 !important;
+    border-radius: 50px !important;
+    transition: 0.3s !important;
+}
+div.stDownloadButton > button:hover, div.stButton > button[kind="secondary"]:hover { background: rgba(255, 255, 255, 0.1) !important; color: #FFF !important; }
+</style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<h1 style='text-align:center; color:#D4AF37; font-family:Amiri; margin: 20px 0 30px; text-shadow: 0 0 20px rgba(212,175,55,0.4);'>⚙️ غرفة تحكم MK Technology ⚙️</h1>", unsafe_allow_html=True)
 
     df = load_db()
     if not df.empty:
@@ -289,56 +377,70 @@ if query_params.get("admin") == ADMIN_PASSWORD:
         count_bride = int(df[df['الجهة']=='جهة العروس 👰']['إجمالي الأشخاص'].sum())
         count_all   = int(df['إجمالي الأشخاص'].sum())
 
-        c1,c2,c3 = st.columns(3)
+        # الكروت الثلاثة العلوية
+        c1, c2, c3 = st.columns(3)
         with c1:
-            if st.button(f"🤵 العريس\n{count_groom} شخص", use_container_width=True):
-                st.session_state.admin_filter = "جهة العريس 🤵"
+            if st.button(f"🤵 العريس\n\n{count_groom} ضيف", use_container_width=True): st.session_state.admin_filter = "جهة العريس 🤵"
         with c2:
-            if st.button(f"👰 العروس\n{count_bride} شخص", use_container_width=True):
-                st.session_state.admin_filter = "جهة العروس 👰"
+            if st.button(f"👰 العروس\n\n{count_bride} ضيف", use_container_width=True): st.session_state.admin_filter = "جهة العروس 👰"
         with c3:
-            if st.button(f"👥 الكل\n{count_all} شخص", use_container_width=True):
-                st.session_state.admin_filter = "الكل"
+            if st.button(f"👥 الإجمالي\n\n{count_all} ضيف", use_container_width=True): st.session_state.admin_filter = "الكل"
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        filt    = st.session_state.admin_filter
+        filt = st.session_state.admin_filter
         view_df = df if filt=="الكل" else df[df['الجهة']==filt].copy()
         view_df = view_df.copy()
         view_df["حذف؟"] = False
 
-        st.caption("💡 انقر على رقم الطاولة لتعديله | ✓ في حذف ثم اضغط حفظ")
+        # الحاوية الزجاجية للجدول
+        st.markdown("<div class='admin-table-container'>", unsafe_allow_html=True)
+        
+        # مؤشر الفلتر النشط
+        filter_color = "#3B82F6" if "العريس" in filt else "#EC4899" if "العروس" in filt else "#D4AF37"
+        st.markdown(f"<div style='text-align: center;'><div class='active-filter-badge' style='border-color: {filter_color};'>الجدول يعرض حالياً: <span style='color: {filter_color};'>{filt}</span></div></div>", unsafe_allow_html=True)
+
+        st.caption("💡 حدد (رقم الطاولة) لتعديلها. للحذف: ضع علامة (✓) بجانب الاسم، ثم اضغط حفظ بالأسفل.")
         edited = st.data_editor(
             view_df,
             column_config={
                 "حذف؟":            st.column_config.CheckboxColumn("🗑️", default=False),
-                "الاسم":           st.column_config.TextColumn("👤 الاسم", disabled=True),
+                "الاسم":           st.column_config.TextColumn("👤 الاسم الكريم", disabled=True),
                 "الجهة":           st.column_config.TextColumn("📍 الجهة", disabled=True),
                 "عدد المرافقين":   st.column_config.TextColumn("المرافقين", disabled=True),
                 "إجمالي الأشخاص": st.column_config.NumberColumn("الإجمالي", disabled=True),
-                "رقم الطاولة":    st.column_config.TextColumn("🪑 الطاولة"),
+                "رقم الطاولة":    st.column_config.TextColumn("🪑 رقم الطاولة"),
             },
-            use_container_width=True, hide_index=True
+            use_container_width=True, hide_index=True, height=400
         )
 
-        if st.button("💾 حفظ التعديلات"):
-            to_del = edited[edited["حذف؟"]==True]["الاسم"].tolist()
-            for _, row in edited.iterrows():
-                update_table_number(row["الاسم"], row["رقم الطاولة"])
-            for n in to_del:
-                delete_guest(n)
-            st.success("✅ تم الحفظ بنجاح!")
-            st.rerun()
-
         st.markdown("<br>", unsafe_allow_html=True)
-        csv = df.to_csv(index=False).encode("utf-8")
-        st.download_button("📥 تحميل CSV", data=csv, file_name="guests.csv", mime="text/csv")
+        
+        # أزرار الإجراءات السفلية
+        col_save, col_export = st.columns([2, 1])
+        with col_save:
+            if st.button("💾 حفظ التعديلات (تحديث طاولات أو حذف ضيوف)", type="primary", use_container_width=True):
+                to_del = edited[edited["حذف؟"]==True]["الاسم"].tolist()
+                for _, row in edited.iterrows():
+                    update_table_number(row["الاسم"], row["رقم الطاولة"])
+                for n in to_del:
+                    delete_guest(n)
+                st.success("✅ تم تحديث قاعدة البيانات بنجاح!")
+                st.rerun()
+                
+        with col_export:
+            csv = df.to_csv(index=False).encode("utf-8")
+            st.download_button("📥 تحميل كملف Excel/CSV", data=csv, file_name="wedding_guests.csv", mime="text/csv", use_container_width=True)
+            
+        st.markdown("</div>", unsafe_allow_html=True) # إغلاق الحاوية الزجاجية
+        
     else:
-        st.info("لا يوجد ضيوف مسجلون بعد.")
+        st.info("لا يوجد ضيوف مسجلون بعد في قاعدة البيانات.")
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚪 خروج"):
-        st.query_params.clear()
-        st.rerun()
+    st.markdown("<br><hr style='border-color: rgba(255,255,255,0.1);'><br>", unsafe_allow_html=True)
+    col_empty, col_exit, col_empty2 = st.columns([1, 1, 1])
+    with col_exit:
+        if st.button("🚪 إغلاق لوحة التحكم", use_container_width=True):
+            st.query_params.clear()
+            st.rerun()
 
 # =========================================================
 # 2. تذكرة VIP
