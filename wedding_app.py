@@ -13,8 +13,8 @@ from supabase import create_client, Client
 # =========================================================
 @st.cache_resource
 def init_supabase() -> Client:
-    url = st.secrets["supabase"]["https://cdvotvobfynweyaouuyo.supabase.co"]   # ← ضع رابط مشروعك
-    key = st.secrets["supabase"]["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNkdm90dm9iZnlud2V5YW91dXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMDI1OTcsImV4cCI6MjA4ODU3ODU5N30.-6PqZWUXbkdRhC8FWTIucwxMVusUa3uCl5x5qQlPphs"]   # ← ضع anon key
+    url = st.secrets["supabase"]["url"]
+    key = st.secrets["supabase"]["key"]   # ← ضع anon key
     return create_client(url, key)
 
 supabase = init_supabase()
